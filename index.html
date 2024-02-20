@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Новая Эра. Калькулятор персонажа</title>
+<meta charset="utf-8">
+
+<link rel="stylesheet" 
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" 
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" 
+    crossorigin="anonymous">
+<link rel="stylesheet"
+    href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" 
+    integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" 
+    crossorigin="anonymous">
+    
+<link rel="stylesheet" 
+    type="text/css" 
+    href="./style.css">
+
+<link rel="stylesheet" 
+    type="text/css" 
+    href="./modal.css">
+
+<script type="text/x-template" id="modal-template">
+      <transition name="modal">
+        <div class="modal-mask">
+          <div class="modal-wrapper">
+            <div class="modal-container">
+
+              <div class="modal-header" >
+                <slot name="header">
+                  default header
+                </slot>
+              </div>
+
+              <div class="modal-body">
+                <slot name="body">
+                  default body
+                </slot>
+              </div>
+
+              <div class="modal-footer">
+                <slot name="footer">
+                  <button class="form-control modal-default-button" @click="$emit('close')">
+                    Закрыть
+                  </button>
+                </slot>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+</script>
+
+</head>
+<body>
+
+<div id="app" class="sheet-container container">
+        <div class="row">
+                  <modal v-if="showModal" @close="showModal = false">
+                    <h3 slot="header" >{{helpHeader}}</h3>
+                    <p slot="body" v-html="helpBody">{{helpBody}}</p>
+                  </modal>
+        </div>
+        <div class="row">
+            <div class="col-2">
+                <a href="/" class="form-control">Сбросить чарник</a>
+            </div>
+            <div class="col-3">
+                <button @click="saveChar()" class="form-control">Сохранить персонажа</button>
+            </div>
+            <div class="col-3">
+                <div v-html="linkChar"></div>
+            </div>
+        </div>
+        <div class="row sticky-bar">
+            <div class="col-3">
+                <label>Имя<input type="text" v-model="name" class="form-control"></label>
+            </div>
+            <div class="col-1">
+                <label>Возраст <input type="text" v-model="age" class="form-control micro-number"><label>
+            </div>
+            <div class="col-3">
+                <label>Выберите пол
+                    <select v-model="sex" class="form-control">
+                        <option v-bind:value="{ num: 1 }">Мужчина</option>
+                        <option v-bind:value="{ num: 2 }">Женщина</option>
+                    </select>
+                </label>
+            </div>
+            <div class="col-1"><label>Опыт <input type="text" v-model="exp" class="form-control micro-number"></label></div>
+            <div class="col-4">
+                <label>Наличность (М/C/З)<br>
+                    <input type="text" v-model="money.gold" class="form-control micro-number" style="float:right;">
+                    <input type="text" v-model="money.silver" class="form-control micro-number" style="float:right;"> 
+                    <input type="text" v-model="money.copper" class="form-control micro-number" style="float:right;">
+                </label>  
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <table class="table">
+                    <thead>
+                        <th>
+                            Выберите рассу: 
+                            <select v-model="race" @change="onChangeRace($event)" class="form-control"  style="float:right; width:50%">
+                                <option disabled v-bind:value="{ id: 'none' }">--- Раса не выбрана ---</option>
+                                <option v-bind:value="{ id: 'human' }">Арьи (люди)</option>
+                                <option v-bind:value="{ id: 'gnome' }">Испы (гномы)</option>
+                                <option v-bind:value="{ id: 'elf' }">Асы (эльфы)</option>
+                                <option v-bind:value="{ id: 'alfar' }">Альфары (половинчики)</option>
+                                <option v-bind:value="{ id: 'orc' }">Ва`нары (орки)</option>
+                                <option v-bind:value="{ id: 'urs' }">Урусы</option>
+                                <option v-bind:value="{ id: 'dark' }">Баастшасы («тёмные»)</option>
+                                <option v-bind:value="{ id: 'nagas' }">Наги</option>
+                            </select>
+                        </th>
+                        <th colspan="2">Рассовые особенности</th>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td v-html="raceInfo" style="text-align: justify"></td>
+                            <td>
+                                <table class="table-race-info">
+                                    <thead>
+                                        <th>Атрибут</th>
+                                        <th>Макс. значение</th>
+                                        <th>Модификатор</th>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Сила</td>
+                                            <td>{{temp.tablePower}}</td>
+                                            <td>{{temp.tablePowerMode}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Ловкость</td>
+                                            <td>{{temp.tableDexterity}}</td>
+                                            <td>{{temp.tableDexterityMode}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Мышление</td>
+                                            <td>{{temp.tableThinking}}</td>
+                                            <td>{{temp.tableThinkingMode}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Образование</td>
+                                            <td>{{temp.tableEducation}}</td>
+                                            <td>{{temp.tableEducationMode}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Уверенность</td>
+                                            <td>{{temp.tableConfidence}}</td>
+                                            <td>{{temp.tableConfidenceMode}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Выносливость</td>
+                                            <td>{{temp.tableEndurance}}</td>
+                                            <td>{{temp.tableEnduranceMode}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                            <td>
+                                <table class="table-race-info">
+                                    <thead>
+                                        <th>Направление магии</th>
+                                        <th>Влияние на УД</th>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Астрал</td>
+                                            <td>{{routeOfMagic.astral}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Жизнь</td>
+                                            <td>{{routeOfMagic.life}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Смерть</td>
+                                            <td>{{routeOfMagic.death}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Вода</td>
+                                            <td>{{routeOfMagic.water}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Земля</td>
+                                            <td>{{routeOfMagic.earth}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Огонь</td>
+                                            <td>{{routeOfMagic.fire}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Воздух</td>
+                                            <td>{{routeOfMagic.air}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row"><hr></div>
+        <div class="row">
+            <h3>Атрибуты</h3>
+        </div>
+
+<div class="row">
+    <div class="col-6">
+
+        <div class="row">
+            <div class="col-4 table-attrs">
+                <table>
+                            <thead>
+                                <th colspan="3">Сила</th>
+                                <th><i id="show-modal" @click="help('attributes.power')" class="fas fa-info-circle cursor-pointer"></i></th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-minus-circle btn" @click="modStats('power', 'minus')"></i></td>
+                                    <td>{{attributes.power}}</td>
+                                    <td><i class="fas fa-plus-circle btn" @click="modStats('power', 'plus')"></i></td>
+                                </tr>
+                            </tbody>
+                </table>
+            </div>
+            <div class="col-4">
+                        <table>
+                            <thead>
+                                <th colspan="3">Ловкость</th>
+                                <th><i id="show-modal" @click="help('attributes.dexterity')" class="fas fa-info-circle cursor-pointer"></i></th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-minus-circle btn" @click="modStats('dexterity', 'minus')"></i></td>
+                                    <td>{{attributes.dexterity}}</td>
+                                    <td><i class="fas fa-plus-circle btn" @click="modStats('dexterity', 'plus')"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+            <div class="col-4">
+                        <table>
+                            <thead>
+                                <th colspan="3">Мышление</th>
+                                <th><i id="show-modal" @click="help('attributes.thinking')" class="fas fa-info-circle cursor-pointer"></i></th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-minus-circle btn" @click="modStats('thinking', 'minus')"></i></td>
+                                    <td>{{attributes.thinking}}</td>
+                                    <td><i class="fas fa-plus-circle btn" @click="modStats('thinking', 'plus')"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+        </div>
+        <div class="row attributes-down">
+            <div class="col-4">
+                        <table>
+                            <thead>
+                                <th colspan="3">Образование</th>
+                                <th><i id="show-modal" @click="help('attributes.education')" class="fas fa-info-circle cursor-pointer"></i></th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-minus-circle btn" @click="modStats('education', 'minus')"></i></td>
+                                    <td>{{attributes.education}}</td>
+                                    <td><i class="fas fa-plus-circle btn" @click="modStats('education', 'plus')"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-4">
+                        <table>
+                            <thead>
+                                <th colspan="3">Уверенность</th>
+                                <th><i id="show-modal" @click="help('attributes.confidence')" class="fas fa-info-circle cursor-pointer"></i></th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-minus-circle btn" @click="modStats('confidence', 'minus')"></i></td>
+                                    <td>{{attributes.confidence}}</td>
+                                    <td><i class="fas fa-plus-circle btn" @click="modStats('confidence', 'plus')"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-4">
+                        <table>
+                            <thead>
+                                <th colspan="3">Выносливость</th>
+                                <th><i id="show-modal" @click="help('attributes.endurance')" class="fas fa-info-circle cursor-pointer"></i></th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-minus-circle btn" @click="modStats('endurance', 'minus')"></i></td>
+                                    <td>{{attributes.endurance}}</td>
+                                    <td><i class="fas fa-plus-circle btn" @click="modStats('endurance', 'plus')"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+        </div> 
+    </div>
+    <div class="col-6">
+        <div class="piramyd-block">
+            <ul class="list-inline endure-block">
+                <li class="list-inline-item" v-for="(item, index) in modPyramid()" :key="index">{{item}}</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+    <div class="row"><hr></div>
+    <div class="row">
+        <h3>Навыки</h3>
+    </div>
+    <div class="row">
+
+<div class="card-columns">
+  
+  <div class="card" v-for="(item, index) in showSkills()" :key="index">
+    <div class="card-body">  
+        <div class="row">
+            <div class="col-10">
+                <b id="show-modal" >{{item.name}}</b>
+            </div>
+            <div class="col-1">
+                <i id="show-modal" class="fas fa-info-circle cursor-pointer" v-on:click="helpSkill(index)"></i>
+            </div>
+        </div>      
+        <div class="row">
+            <div class="col-1">
+                <i class="fas fa-minus-circle btn" v-on:click="updateSkill(index, 'minus')"></i>
+            </div>
+            <div class="col-1">{{item.lvl}}</div>
+            <div class="col-1">
+                <i class="fas fa-plus-circle btn" v-on:click="updateSkill(index, 'plus')"></i>
+            </div>
+        </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+    </div>
+
+
+    <div class="row"><hr></div>
+    <div class="row">
+        <h3>Особенности</h3>
+    </div>
+
+
+
+</div>
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+<script charset="UTF-8" src="./script.js"></script>
+</html>
